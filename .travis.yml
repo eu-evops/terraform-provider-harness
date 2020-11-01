@@ -3,7 +3,9 @@ language: go
 go:
   - "1.15"
 
-script: tar czvf terraform-provider-harness.tar.gz terraform-provider-harness
+script:
+  - make
+  - tar czvf terraform-provider-harness.tar.gz terraform-provider-harness
 
 deploy:
   provider: releases
