@@ -2,3 +2,12 @@ language: go
 
 go:
   - "1.15"
+
+script: tar czvf terraform-provider-harness.tar.gz terraform-provider-harness
+
+deploy:
+  provider: releases
+  file: terraform-provider-harness.tar.gz
+  edge: true # opt in to dpl v2
+  on:
+    tags: true
