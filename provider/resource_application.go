@@ -29,7 +29,13 @@ func resourceApplication() *schema.Resource {
 
 func resourceApplicationCreate(c context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Harness.Client)
-	app, err := client.NewApplication(d.Get("name").(string))
+
+	app := &Harness.Application{
+		Name:        d.Get("name").(string),
+		Description: d.Get("description").(string),
+	}
+
+	app, err := client.NewApplication(app)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -47,18 +53,26 @@ func resourceApplicationRead(c context.Context, d *schema.ResourceData, meta int
 	}
 
 	d.Set("name", app.Name)
+	d.Set("description", app.Description)
 
 	return nil
 }
 
 func resourceApplicationUpdate(c context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Harness.Client)
-	app, err := client.UpdateApplication(d.Id(), d.Get("name").(string))
+
+	app := &Harness.Application{
+		Name:        d.Get("name").(string),
+		Description: d.Get("description").(string),
+	}
+
+	app, err := client.UpdateApplication(app)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.Set("name", app.Name)
+	d.Set("description", app.Description)
 
 	return nil
 }

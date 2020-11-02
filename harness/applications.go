@@ -41,8 +41,9 @@ type DeleteApplicationApiResponse struct {
 }
 
 type Application struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 func (h *Client) GetApplication(id string) (*Application, error) {
@@ -109,8 +110,8 @@ func (h *Client) DeleteApplication(id string) error {
 	return nil
 }
 
-func (h *Client) NewApplication(name string) (*Application, error) {
-	fmt.Print("Creating a Harness.io application with name '%s'", name)
+func (h *Client) NewApplication(a *Application) (*Application, error) {
+	fmt.Print("Creating a Harness.io application with name '%s'", a.Name)
 
 	query := `mutation createApp($app: CreateApplicationInput!){
 		createApplication(input: $app){
@@ -127,7 +128,8 @@ func (h *Client) NewApplication(name string) (*Application, error) {
 		Query:         query,
 		Variables: map[string]interface{}{
 			"app": map[string]string{
-				"name": name,
+				"name":        a.Name,
+				"description": a.Description,
 			},
 		},
 	}
@@ -143,15 +145,11 @@ func (h *Client) NewApplication(name string) (*Application, error) {
 		return nil, fmt.Errorf("Errors: %#v", apiResponse.Errors)
 	}
 
-	app := &Application{}
-	app.ID = apiResponse.Data.CreateApplication.Application.ID
-	app.Name = apiResponse.Data.CreateApplication.Application.Name
-
-	return app, nil
+	return apiResponse.Data.CreateApplication.Application, nil
 }
 
-func (h *Client) UpdateApplication(id string, name string) (*Application, error) {
-	fmt.Print("Updating a Harness.io application with id '%s'", id)
+func (h *Client) UpdateApplication(a *Application) (*Application, error) {
+	fmt.Print("Updating a Harness.io application with id '%s'", a.ID)
 
 	query := `mutation updateApp($app: UpdateApplicationInput!){
 		updateApplication(input: $app){
@@ -168,8 +166,9 @@ func (h *Client) UpdateApplication(id string, name string) (*Application, error)
 		Query:         query,
 		Variables: map[string]interface{}{
 			"app": map[string]string{
-				"applicationId": id,
-				"name":          name,
+				"applicationId": a.ID,
+				"name":          a.Name,
+				"description":   a.Description,
 			},
 		},
 	}
