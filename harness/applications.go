@@ -53,6 +53,7 @@ func (h *Client) GetApplication(id string) (*Application, error) {
 		application(applicationId: "%s"){
 			id
 			name
+			description
 		}
 	}
 	`
@@ -70,11 +71,7 @@ func (h *Client) GetApplication(id string) (*Application, error) {
 		return nil, fmt.Errorf("Errors: %#v", apiResponse.Errors)
 	}
 
-	app := &Application{}
-	app.ID = apiResponse.Data.Application.ID
-	app.Name = apiResponse.Data.Application.Name
-
-	return app, nil
+	return apiResponse.Data.Application, nil
 }
 
 func (h *Client) DeleteApplication(id string) error {
@@ -118,6 +115,7 @@ func (h *Client) NewApplication(a *Application) (*Application, error) {
 			application {
 				id
 				name
+				description
 			}
 		}
 	}
@@ -156,6 +154,7 @@ func (h *Client) UpdateApplication(a *Application) (*Application, error) {
 			application {
 				id
 				name
+				description
 			}
 		}
 	}

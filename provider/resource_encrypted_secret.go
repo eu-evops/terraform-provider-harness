@@ -107,7 +107,6 @@ func resourceSecretCreate(c context.Context, d *schema.ResourceData, meta interf
 
 	d.SetId(app.ID)
 	d.Set("name", app.Name)
-	d.Set("value", app.Value)
 
 	return resourceSecretRead(c, d, meta)
 }
@@ -164,7 +163,6 @@ func resourceSecretUpdate(c context.Context, d *schema.ResourceData, meta interf
 	}
 
 	d.Set("name", updatedSecret.Name)
-	d.Set("value", updatedSecret.Value)
 	d.Set("scoped_to_account", updatedSecret.ScopedToAccount)
 
 	return nil

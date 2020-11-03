@@ -62,6 +62,7 @@ func resourceApplicationUpdate(c context.Context, d *schema.ResourceData, meta i
 	client := meta.(*Harness.Client)
 
 	app := &Harness.Application{
+		ID:          d.Id(),
 		Name:        d.Get("name").(string),
 		Description: d.Get("description").(string),
 	}
@@ -70,9 +71,6 @@ func resourceApplicationUpdate(c context.Context, d *schema.ResourceData, meta i
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
-	d.Set("name", app.Name)
-	d.Set("description", app.Description)
 
 	return nil
 }
