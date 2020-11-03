@@ -4,10 +4,31 @@ import (
 	"fmt"
 )
 
+type ApplicationScope struct {
+	AppId      string `json:"appId,omitempty"`
+	FilterType string `json:"filterType,omitempty"`
+}
+
+type EnvironmentScope struct {
+	EnvId      string `json:"envId,omitempty"`
+	FilterType string `json:"filterType,omitempty"`
+}
+
+type AppEnvScope struct {
+	Application *ApplicationScope `json:"application"`
+	Environment *EnvironmentScope `json:"environment"`
+}
+
+type UsageScope struct {
+	AppEnvScopes []*AppEnvScope `json:"appEnvScopes"`
+}
+
 type EncryptedSecret struct {
-	ID          string
-	Name        string
-	Description string
+	ID              string      `json:"id"`
+	Name            string      `json:"name"`
+	Value           string      `json:"value"`
+	ScopedToAccount bool        `json:"scopedToAccount"`
+	UsageScope      *UsageScope `json:"usageScope"`
 }
 
 type EncryptedSecretWrapper struct {
@@ -61,7 +82,7 @@ func (h *Client) GetEncryptedSecret(id string) (*EncryptedSecret, error) {
 	return response.Data.Secret, nil
 }
 
-func (h *Client) NewEncryptedSecret(name string, value string) (*EncryptedSecret, error) {
+func (h *Client) NewEncryptedSecret(s *EncryptedSecret) (*EncryptedSecret, error) {
 	query := `mutation($secret: CreateSecretInput!) {
 		createSecret(input: $secret){
 			secret {
@@ -78,9 +99,10 @@ func (h *Client) NewEncryptedSecret(name string, value string) (*EncryptedSecret
 			"secret": map[string]interface{}{
 				"secretType": "ENCRYPTED_TEXT",
 				"encryptedText": map[string]interface{}{
-					"scopedToAccount": true,
-					"name":            name,
-					"value":           value,
+					"scopedToAccount": s.ScopedToAccount,
+					"name":            s.Name,
+					"value":           s.Value,
+					"usageScope":      s.UsageScope,
 				},
 			},
 		},
@@ -133,8 +155,8 @@ func (h *Client) DeleteEncryptedSecret(id string) error {
 	return nil
 }
 
-func (h *Client) UpdateEncryptedSecret(id string, name string, value string) (*EncryptedSecret, error) {
-	fmt.Printf("Updating Harness.io secret with id '%s'", id)
+func (h *Client) UpdateEncryptedSecret(s *EncryptedSecret) (*EncryptedSecret, error) {
+	fmt.Printf("Updating Harness.io secret with id '%s'", s.ID)
 
 	query := `mutation($secret: UpdateSecretInput!){
 		updateSecret(input: $secret) {
@@ -151,11 +173,13 @@ func (h *Client) UpdateEncryptedSecret(id string, name string, value string) (*E
 		Query: query,
 		Variables: map[string]interface{}{
 			"secret": map[string]interface{}{
-				"secretId":   id,
+				"secretId":   s.ID,
 				"secretType": "ENCRYPTED_TEXT",
 				"encryptedText": map[string]interface{}{
-					"name":  name,
-					"value": value,
+					"name":            s.Name,
+					"value":           s.Value,
+					"scopedToAccount": s.ScopedToAccount,
+					"usageScope":      s.UsageScope,
 				},
 			},
 		},
