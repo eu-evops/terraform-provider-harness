@@ -48,9 +48,23 @@ func resourceApplicationRead(c context.Context, d *schema.ResourceData, meta int
 	client := meta.(*Harness.Client)
 	app, err := client.GetApplication(d.Id())
 
-	if err != nil {
+	_, userNotAuthorised := err.(*Harness.UserNotAuthorisedError)
+	if userNotAuthorised {
+		app, err = client.GetApplicationByName(d.Get("name").(string))
+	}
+
+	_, applicationNotFound := err.(*Harness.ApplicationNotFound)
+	if applicationNotFound {
+		d.SetId("")
+		return nil
+	}
+
+	if err != nil && !userNotAuthorised && !applicationNotFound {
 		return diag.FromErr(err)
 	}
+
+	// When application is not found, it gives authorisation error instead of app not found error
+	// We'll try querying by name to make sure app does not exist
 
 	d.Set("name", app.Name)
 	d.Set("description", app.Description)

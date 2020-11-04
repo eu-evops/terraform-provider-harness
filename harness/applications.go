@@ -2,6 +2,7 @@ package harness
 
 import (
 	"fmt"
+	"strings"
 )
 
 type CreateApplicationWrapper struct {
@@ -46,6 +47,24 @@ type Application struct {
 	Description string `json:"description"`
 }
 
+type ApplicationRetrievalError struct{}
+
+func (e *ApplicationRetrievalError) Error() string {
+	return fmt.Sprintf("ApplicationRetrievalError")
+}
+
+type UserNotAuthorisedError struct{}
+
+func (e *UserNotAuthorisedError) Error() string {
+	return fmt.Sprintf("UserNotAuthorisedError")
+}
+
+type ApplicationNotFound struct{}
+
+func (e *ApplicationNotFound) Error() string {
+	return fmt.Sprintf("ApplicationNotFound")
+}
+
 func (h *Client) GetApplication(id string) (*Application, error) {
 	fmt.Print("Getting a Harness.io application with id '%s'", id)
 
@@ -68,6 +87,43 @@ func (h *Client) GetApplication(id string) (*Application, error) {
 	}
 
 	if len(apiResponse.Errors) > 0 {
+
+		if strings.Contains(apiResponse.Errors[0].Message, "User not authorized") {
+			return nil, &UserNotAuthorisedError{}
+		}
+
+		return nil, fmt.Errorf("Errors: %#v", apiResponse.Errors)
+	}
+
+	return apiResponse.Data.Application, nil
+}
+
+func (h *Client) GetApplicationByName(name string) (*Application, error) {
+	fmt.Print("Getting a Harness.io application with name '%s'", name)
+
+	query := `query {
+		applicationByName(name: "%s"){
+			id
+			name
+			description
+		}
+	}
+	`
+
+	graphQlQuery := &GraphQLQuery{
+		Query: fmt.Sprintf(query, name),
+	}
+	apiResponse := &GetApplicationApiResponse{}
+	err := h.query(graphQlQuery, &apiResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(apiResponse.Errors) > 0 {
+		if strings.Contains(apiResponse.Errors[0].Message, "Application does not exist") {
+			return nil, &ApplicationNotFound{}
+		}
+
 		return nil, fmt.Errorf("Errors: %#v", apiResponse.Errors)
 	}
 
