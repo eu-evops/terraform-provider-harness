@@ -2,6 +2,7 @@ package harness
 
 import (
 	"fmt"
+	"strings"
 )
 
 type ApplicationScope struct {
@@ -23,10 +24,18 @@ type UsageScope struct {
 	AppEnvScopes []*AppEnvScope `json:"appEnvScopes"`
 }
 
+type NotFound struct {
+}
+
+func (e *NotFound) Error() string {
+	return fmt.Sprintf("Not found")
+}
+
 type EncryptedSecret struct {
 	ID              string      `json:"id"`
 	Name            string      `json:"name"`
 	Value           string      `json:"value"`
+	SecretManagerID string      `json:"secretManagerId"`
 	ScopedToAccount bool        `json:"scopedToAccount"`
 	UsageScope      *UsageScope `json:"usageScope"`
 }
@@ -76,6 +85,10 @@ func (h *Client) GetEncryptedSecret(id string) (*EncryptedSecret, error) {
 	}
 
 	if len(response.Errors) > 0 {
+		if strings.Contains(response.Errors[0].Message, "No secret exists with given input") {
+			return nil, &NotFound{}
+		}
+
 		return nil, fmt.Errorf("Error retrieving secret: %#v", response.Errors)
 	}
 
@@ -102,6 +115,7 @@ func (h *Client) NewEncryptedSecret(s *EncryptedSecret) (*EncryptedSecret, error
 					"scopedToAccount": s.ScopedToAccount,
 					"name":            s.Name,
 					"value":           s.Value,
+					"secretManagerId": s.SecretManagerID,
 					"usageScope":      s.UsageScope,
 				},
 			},
@@ -115,7 +129,7 @@ func (h *Client) NewEncryptedSecret(s *EncryptedSecret) (*EncryptedSecret, error
 	}
 
 	if len(response.Errors) > 0 {
-		return nil, fmt.Errorf("Error retrieving secret: %#v", response.Errors)
+		return nil, fmt.Errorf("Error creating secret: %#v", response.Errors)
 	}
 
 	return response.Data.CreateSecret.Secret, nil

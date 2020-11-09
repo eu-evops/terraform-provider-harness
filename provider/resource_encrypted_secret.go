@@ -26,6 +26,10 @@ func resourceEncryptedSecret() *schema.Resource {
 				Required:  true,
 				Sensitive: true,
 			},
+			"secret_manager_id": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
 			"scoped_to_account": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -77,6 +81,7 @@ func resourceSecretCreate(c context.Context, d *schema.ResourceData, meta interf
 	secret := &Harness.EncryptedSecret{
 		Name:            d.Get("name").(string),
 		Value:           d.Get("value").(string),
+		SecretManagerID: d.Get("secret_manager_id").(string),
 		ScopedToAccount: d.Get("scoped_to_account").(bool),
 		UsageScope: &Harness.UsageScope{
 			AppEnvScopes: make([]*Harness.AppEnvScope, 0),
@@ -114,6 +119,12 @@ func resourceSecretCreate(c context.Context, d *schema.ResourceData, meta interf
 func resourceSecretRead(c context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Harness.Client)
 	app, err := client.GetEncryptedSecret(d.Id())
+
+	_, notFound := err.(*Harness.NotFound)
+	if notFound {
+		d.SetId("")
+		return nil
+	}
 
 	if err != nil {
 		return diag.FromErr(err)
